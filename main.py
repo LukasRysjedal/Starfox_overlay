@@ -14,19 +14,27 @@ class MainWindow(QtWidgets.QWidget):
         self.resize(self.screen_width, self.screen_height)
         self.move(0, self.screen_size.height() - self.screen_height)
 
+        img_dir = os.path.dirname(os.path.abspath(__file__))
+        img_path = os.path.join(img_dir, "img", "IMG_3302(1)(1).jpg")
+
+        self.pixmap = QtGui.QPixmap(img_path)
+        self.scaled_img = self.pixmap.scaled(self.screen_height/2, self.screen_height/2, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.SmoothTransformation)
         self.image_container = QtWidgets.QLabel(self)
         self.image_container.setStyleSheet("border: 3px solid yellow")
         self.image_container.setGeometry(self.screen_width/5, self.screen_height/2, self.screen_height/2, self.screen_height/2)
+        self.image_container.setPixmap(self.scaled_img)
         #self.layout = QtWidgets.QVBoxLayout(self)
 
-        self.text_container = QtWidgets.QLabel("lorem lorem lorem ipsum!", self)
-        self.text_container.setStyleSheet(f"border: 1px solid blue; font-size: 30px; font-family: {text_font};")
+        self.text_container = QtWidgets.QLabel("Just shoot it fox!", self)
+        self.text_container.setStyleSheet(f"background-color: rgba(20, 20, 80, 180); border: rgba(20, 20, 80, 180); font-size: 60px; font-family: {text_font};")
         self.text_container.setGeometry(self.screen_width/5 + self.screen_height/2 + 20, self.screen_height/2  + self.screen_height/2*0.05, self.screen_width/1.85, self.screen_height/2 - self.screen_height/2*0.1)
-
+        #Alligne the text in the top left corner, and enable a new line downwards
+        self.text_container.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
+        self.text_container.setWordWrap(True)
 
         self.username_display = QtWidgets.QLabel("Lukas", self)
-        self.username_display.setStyleSheet(f"color: yellow; font-size: 40px; font-family: {username_font};")
-        self.username_display.move(self.screen_width/2, 5)
+        self.username_display.setStyleSheet(f"border: none; color: yellow; font-size: 33px; font-family: {username_font};")
+        self.username_display.move(self.screen_width/5 + self.screen_height/2 + 20, self.screen_height/2  + self.screen_height/2*0.05 - self.username_display.height())
 
         #Sets the attribute for the window/widget
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
