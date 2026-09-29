@@ -90,3 +90,10 @@ class Main_window(QtWidgets.QWidget):
             self.text_font = "Arial"
 
 
+    def show_window(self):
+        self.show()
+
+    def hide_window(self):
+        self.hide()
+
+
