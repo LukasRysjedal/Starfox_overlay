@@ -8,14 +8,14 @@ from pynput import keyboard
 def main():
 
     def on_press(key):
-        if key == keyboard.Key.space:
-            widget.show()
+        if key == keyboard.Key.ctrl:
+            widget.show_requested.emit()
         if key == keyboard.Key.shift:
-            widget.hide()
+            widget.hide_requested.emit()
 
     app = QtWidgets.QApplication([])
+    timer = QtCore.QTimer()
     widget = Main_window(app)
-    widget.show()
 
     listener = keyboard.Listener(on_press=on_press)
     listener.start()
