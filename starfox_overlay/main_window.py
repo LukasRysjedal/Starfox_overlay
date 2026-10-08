@@ -1,7 +1,7 @@
 
 import os
 from PySide6 import QtCore, QtWidgets, QtGui
-from starfox_overlay.constants import SCREEN_WIDTH_RATIO, SCREEN_HEIGHT_RATIO , IMAGE_CONTAINER_RATIO, IMAGE_CONTAINER_X_POS_RATIO, IMAGE_CONTAINER_Y_POS_RATIO, TEXT_CONTAINER_WIDTH_RATIO, TEXT_CONTAINER_HEIGHT_RATIO, TEXT_CONTAINER_X_POS_OFFSET, TEXT_CONTAINER_Y_POS_OFFSET_RATIO, TEXT_CONTAINER_BACKGORUNDCOLOR, TEXT_CONTAINER_START_ANIMATION_Y_POS_OFFSET_RATIO, TEXT_CONTAINER_START_ANIMATION_HEIGHT_RATIO
+from starfox_overlay.constants import SCREEN_WIDTH_RATIO, SCREEN_HEIGHT_RATIO , IMAGE_CONTAINER_RATIO, IMAGE_CONTAINER_X_POS_RATIO, IMAGE_CONTAINER_Y_POS_RATIO, TEXT_CONTAINER_WIDTH_RATIO, TEXT_CONTAINER_HEIGHT_RATIO, TEXT_CONTAINER_X_POS_OFFSET, TEXT_CONTAINER_Y_POS_OFFSET_RATIO, TEXT_CONTAINER_BACKGORUNDCOLOR, TEXT_CONTAINER_START_ANIMATION_Y_POS_OFFSET_RATIO, TEXT_CONTAINER_START_ANIMATION_HEIGHT_RATIO, TEXT_CONTAINER_TEXT_Y_OVERFLOW_TRESHHOLD
 
 
 class Main_window(QtWidgets.QWidget):
@@ -192,6 +192,7 @@ class Main_window(QtWidgets.QWidget):
 
     def start_typewriter(self, text):
         self.text_index = 0
+        self.start_text_index = 0
         self.text = text
         self.text_container.setText("")
         self.typewriter_timer = QtCore.QTimer()
@@ -200,9 +201,41 @@ class Main_window(QtWidgets.QWidget):
 
     def display_word(self):
         self.text_index += 1
-        self.text_container.setText(self.text[:self.text_index])
+        current_text = self.text[self.start_text_index:self.text_index]
         if self.text_index >= len(self.text):
             self.typewriter_timer.stop()
+
+        at_word_start = (
+        self.text_index > self.start_text_index
+        and self.text[self.text_index - 1] == " "
+        )
+        if at_word_start and self.next_word_overflows():
+            self.typewriter_timer.stop()
+            QtCore.QTimer.singleShot(1000, self.whipe_text_and_continue)
+            return
+
+        self.text_container.setText(current_text)
+
+    def next_word_overflows(self):
+        word_end = self.text.find(" ", self.text_index)
+        if word_end == -1:
+            word_end = len(self.text)
+
+        lookahead = self.text[self.start_text_index:word_end]
+        metrics = QtGui.QFontMetrics(self.text_container.font())
+        width = self.text_container.contentsRect().width()
+        rect = metrics.boundingRect(
+            QtCore.QRect(0, 0, width, 10000),
+            QtCore.Qt.TextWordWrap,
+            lookahead
+        )
+        return rect.height() >= self.text_container_height * TEXT_CONTAINER_TEXT_Y_OVERFLOW_TRESHHOLD
+
+
+    def whipe_text_and_continue(self):
+        self.text_container.setText("")
+        self.start_text_index = self.text_index
+        self.typewriter_timer.start(30)
 
     def show_window(self, text):
         self.image_container.hide()
