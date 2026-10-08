@@ -15,6 +15,7 @@ def main():
 
     app = QtWidgets.QApplication([])
     widget = Main_window(app)
+    widget.initialise_scaled_images()
 
     listener = keyboard.Listener(on_press=on_press)
     listener.start()

@@ -31,6 +31,15 @@ class Main_window(QtWidgets.QWidget):
             int(self.image_container_size),
             int(0)
         )
+        self.profile_sprite_images = [
+            "sprite_image_0.png",
+            "sprite_image_1.png",
+            "sprite_image_2.png",
+            "sprite_image_3.png",
+            "sprite_image_4.png",
+            "sprite_image_5.png"
+        ]
+        self.loading_image = "loading_image.webp"
 
         self.text_container_width = self.window_width * TEXT_CONTAINER_WIDTH_RATIO
         self.text_container_height = self.window_height * TEXT_CONTAINER_HEIGHT_RATIO
@@ -80,30 +89,59 @@ class Main_window(QtWidgets.QWidget):
         self.image_container = QtWidgets.QLabel(self)
         self.image_container.setGeometry(self.image_container_x_pos, self.image_container_y_pos, self.image_container_size, self.image_container_size)
 
-
-    def switch_to_image_in_image_container(self, border_color):
+    def initialise_scaled_images(self):
+        self.sprite_pixmaps = []
         try:
+            # scaleing the sprite images into pixmap
             img_dir = os.path.dirname(os.path.abspath(__file__))
-            img_path = os.path.join(img_dir,"..", "img", "IMG_3302(1)(1).jpg")
-            self.pixmap = QtGui.QPixmap(img_path)
+            for image in self.profile_sprite_images:
+                img_path = os.path.join(
+                    img_dir,
+                    "..",
+                    "img",
+                    "tmp_sprite_images",
+                    image
+                )
+                pixmap = QtGui.QPixmap(img_path)
+
+                scaled = pixmap.scaled(
+                    self.image_container_size,
+                    self.image_container_size,
+                    QtCore.Qt.IgnoreAspectRatio,
+                    QtCore.Qt.SmoothTransformation
+                )
+
+                self.sprite_pixmaps.append(scaled)
+            #Scaling the loading image to pixmap
+            img_path = os.path.join(img_dir,"..", "img", "Loading_image", "loading_image.webp")
+            pixmap = QtGui.QPixmap(img_path)
+            self.loading_scaled_pixmap = pixmap.scaled(
+                    self.image_container_size,
+                    self.image_container_size,
+                    QtCore.Qt.IgnoreAspectRatio,
+                    QtCore.Qt.SmoothTransformation
+                )
+
         except Exception as e:
             print(f"Problem with loading img: {e}")
-        self.scaled_img = self.pixmap.scaled(self.image_container_size, self.image_container_size, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.SmoothTransformation)
+
+    def switch_to_profile_image_in_image_container(self, border_color):
         self.image_container.setStyleSheet(f"border: 3px solid {border_color}")
-        self.image_container.setPixmap(self.scaled_img)
+        self.image_container.setPixmap(self.sprite_pixmaps[0])
 
     def swicth_to_loading_image_in_image_container(self):
-        try:
-            img_dir = os.path.dirname(os.path.abspath(__file__))
-            img_path = os.path.join(img_dir,"..", "img", "Loading_image", "loading_image.webp")
-            self.pixmap = QtGui.QPixmap(img_path)
-        except Exception as e:
-            print(f"Problem with loading img: {e}")
-
-        self.scaled_img = self.pixmap.scaled(self.image_container_size, self.image_container_size, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.SmoothTransformation)
         self.image_container.setStyleSheet(f"border: 3px solid white")
-        self.image_container.setPixmap(self.scaled_img)
+        self.image_container.setPixmap(self.loading_scaled_pixmap)
 
+    def initialise_sprite_image_animation(self):
+        self.sprite_image_index = 1
+        self.sprite_timer = QtCore.QTimer()
+        self.sprite_timer.timeout.connect(self.switch_profile_sprite_image_in_image_container)
+        self.sprite_timer.start(33)
+
+    def switch_profile_sprite_image_in_image_container(self):
+        self.image_container.setPixmap(self.sprite_pixmaps[self.sprite_image_index])
+        self.sprite_image_index = (self.sprite_image_index + 1) % len(self.profile_sprite_images)
 
     def initialise_text_container(self):
         self.text_container = QtWidgets.QLabel(self)
@@ -148,6 +186,7 @@ class Main_window(QtWidgets.QWidget):
         self.open_text_animation.setStartValue(self.text_container_starting_animation_rect)
         self.open_text_animation.setEndValue(self.text_container_final_animation_rect)
         self.open_text_animation.finished.connect(lambda: self.start_typewriter(self.pending_text))
+        self.open_text_animation.finished.connect(self.initialise_sprite_image_animation)
         self.open_text_animation.start()
 
     def close_text_container(self):
@@ -175,7 +214,7 @@ class Main_window(QtWidgets.QWidget):
         QtCore.QTimer.singleShot(600, self.initialize_rest_of_open_animation)
 
     def initialize_rest_of_open_animation(self):
-        self.switch_to_image_in_image_container("yellow")
+        self.switch_to_profile_image_in_image_container("yellow")
         self.username_display.show()
         self.open_text_container()
 
@@ -186,7 +225,7 @@ class Main_window(QtWidgets.QWidget):
         self.close_image_animation.setEndValue(self.image_container_starter_animation_rect)
         self.close_image_animation.finished.connect(self.on_close_image_container_closed)
         self.close_image_animation.start()
-    
+
     def on_close_image_container_closed(self):
         self.image_container.hide()
 
@@ -211,7 +250,7 @@ class Main_window(QtWidgets.QWidget):
         )
         if at_word_start and self.next_word_overflows():
             self.typewriter_timer.stop()
-            QtCore.QTimer.singleShot(1000, self.whipe_text_and_continue)
+            QtCore.QTimer.singleShot(900, self.whipe_text_and_continue)
             return
 
         self.text_container.setText(current_text)
@@ -248,6 +287,7 @@ class Main_window(QtWidgets.QWidget):
 
 
     def hide_window(self):
+        self.sprite_timer.stop()
         self.swicth_to_loading_image_in_image_container()
         self.username_display.hide()
         self.text_container.setText("")
